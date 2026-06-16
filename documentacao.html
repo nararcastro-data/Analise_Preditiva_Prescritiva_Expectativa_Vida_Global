@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Documentação — Expectativa de Vida Global</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f5f7fa;
+      color: #222;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #1A5CFF;
+      color: #fff;
+      padding: 32px 48px 24px;
+    }
+    header h1 { margin: 0 0 6px; font-size: 2rem; }
+    header p  { margin: 0; opacity: .85; font-size: 1rem; }
+    main {
+      max-width: 960px;
+      margin: 36px auto;
+      padding: 0 24px 48px;
+    }
+    h2 {
+      color: #1A5CFF;
+      border-bottom: 2px solid #1A5CFF;
+      padding-bottom: 6px;
+      margin-top: 40px;
+    }
+    h3 { color: #333; margin-top: 28px; }
+    p, li { line-height: 1.7; }
+    ul { padding-left: 22px; }
+    code {
+      background: #e8ecf5;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-family: 'Consolas', monospace;
+      font-size: .93em;
+    }
+    pre {
+      background: #1e1e2e;
+      color: #cdd6f4;
+      border-radius: 8px;
+      padding: 18px 22px;
+      overflow-x: auto;
+      font-size: .88rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; color: inherit; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: .93rem;
+    }
+    th {
+      background: #1A5CFF;
+      color: #fff;
+      padding: 9px 14px;
+      text-align: left;
+    }
+    td { padding: 8px 14px; border-bottom: 1px solid #dde3f0; }
+    tr:nth-child(even) td { background: #f0f3fa; }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: .8rem;
+      font-weight: 600;
+    }
+    .badge-blue   { background: #dbe8ff; color: #1A5CFF; }
+    .badge-green  { background: #d6f5e3; color: #1a7a45; }
+    .badge-orange { background: #fff0d6; color: #a05a00; }
+    .note {
+      background: #fff8e1;
+      border-left: 4px solid #ffc107;
+      padding: 12px 18px;
+      border-radius: 4px;
+      margin: 18px 0;
+    }
+    footer {
+      text-align: center;
+      font-size: .82rem;
+      color: #888;
+      padding: 24px;
+      border-top: 1px solid #dde3f0;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Expectativa de Vida Global</h1>
+  <p>Documentação técnica — <strong>exercicio_aula18.ipynb</strong></p>
+</header>
+
+<main>
+
+  <!-- VISÃO GERAL -->
+  <h2>1. Visão Geral</h2>
+  <p>
+    Este projeto realiza uma análise exploratória e preparação de dados sobre a
+    <strong>expectativa de vida mundial</strong> no período de 2016 a 2025,
+    utilizando o arquivo <code>expectativa_vida_2016_2025.csv</code> como fonte.
+    O trabalho está dividido em quatro etapas principais:
+  </p>
+  <ul>
+    <li>Inspeção estrutural e carregamento dos dados</li>
+    <li>Análise Exploratória de Dados (EDA)</li>
+    <li>Data Munging (limpeza e imputação)</li>
+    <li>Engenharia de Recursos + análise de multicolinearidade</li>
+  </ul>
+
+  <!-- DEPENDÊNCIAS -->
+  <h2>2. Dependências</h2>
+  <p>Arquivo: <code>requirements.txt</code></p>
+  <pre><code>pandas
+matplotlib
+seaborn
+numpy
+scikit-learn
+statsmodels
+scipy          # usado no teste de Mann-Whitney (Q3)</code></pre>
+  <p>Instale com:</p>
+  <pre><code>pip install -r requirements.txt</code></pre>
+
+  <!-- DATASET -->
+  <h2>3. Dataset</h2>
+  <table>
+    <thead>
+      <tr><th>Atributo</th><th>Valor</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Arquivo</td><td><code>expectativa_vida_2016_2025.csv</code></td></tr>
+      <tr><td>Dimensões (bruto)</td><td>1 945 linhas × 22 colunas</td></tr>
+      <tr><td>Dimensões (limpo)</td><td>1 934 linhas × 19 colunas</td></tr>
+      <tr><td>Período</td><td>2016 – 2025</td></tr>
+      <tr><td>Países distintos</td><td>233</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.1 Colunas principais</h3>
+  <table>
+    <thead>
+      <tr><th>Coluna (limpa)</th><th>Tipo</th><th>Descrição</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>country</code></td><td>str</td><td>Nome do país</td></tr>
+      <tr><td><code>year</code></td><td>int64</td><td>Ano da observação</td></tr>
+      <tr><td><code>status</code></td><td>str</td><td>Developed / Developing</td></tr>
+      <tr><td><code>life_expectancy</code> ⭐</td><td>float64</td><td>Variável-alvo: expectativa de vida (anos)</td></tr>
+      <tr><td><code>adult_mortality</code></td><td>float64</td><td>Mortalidade adulta por 1 000 hab.</td></tr>
+      <tr><td><code>inf_death</code></td><td>int64</td><td>Mortes infantis por 1 000 hab.</td></tr>
+      <tr><td><code>alcohol</code></td><td>float64</td><td>Consumo de álcool per capita (L)</td></tr>
+      <tr><td><code>hepatitisB</code></td><td>float64</td><td>Cobertura vacinal — Hepatite B (%)</td></tr>
+      <tr><td><code>measles</code></td><td>int64</td><td>Casos reportados de sarampo</td></tr>
+      <tr><td><code>bmi</code></td><td>float64</td><td>IMC médio da população</td></tr>
+      <tr><td><code>polio</code></td><td>float64</td><td>Cobertura vacinal — Poliomielite (%)</td></tr>
+      <tr><td><code>total_expenditure</code></td><td>float64</td><td>Gasto total em saúde (% do PIB)</td></tr>
+      <tr><td><code>diphtheria</code></td><td>float64</td><td>Cobertura vacinal — Difteria (%)</td></tr>
+      <tr><td><code>hiv</code></td><td>float64</td><td>Mortes por HIV/AIDS por 1 000 hab.</td></tr>
+      <tr><td><code>gdp</code></td><td>float64</td><td>PIB per capita (USD)</td></tr>
+      <tr><td><code>population</code></td><td>float64</td><td>População total</td></tr>
+      <tr><td><code>thinness_till19</code></td><td>float64</td><td>% magreza em crianças 1–19 anos</td></tr>
+      <tr><td><code>thinness_till9</code></td><td>float64</td><td>% magreza em crianças 5–9 anos</td></tr>
+      <tr><td><code>school</code></td><td>float64</td><td>Anos médios de escolaridade</td></tr>
+    </tbody>
+  </table>
+
+  <!-- EDA -->
+  <h2>4. Análise Exploratória (EDA)</h2>
+
+  <h3>Q1 — Distribuição da variável-alvo</h3>
+  <p>
+    A distribuição de <code>life_expectancy</code> é <strong>bimodal e assimétrica à esquerda</strong>,
+    com dois picos de frequência: ~60–65 anos (países em desenvolvimento) e ~75–80 anos
+    (países desenvolvidos). Média global: <strong>72,53 anos</strong>.
+  </p>
+
+  <h3>Q2 — Dados ausentes</h3>
+  <table>
+    <thead>
+      <tr><th>Coluna</th><th>Nulos</th><th>%</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>gdp</code></td><td>55</td><td>2,84 %</td></tr>
+      <tr><td><code>population</code></td><td>39</td><td>2,02 %</td></tr>
+      <tr><td><code>alcohol</code></td><td>21</td><td>1,09 %</td></tr>
+      <tr><td><code>total_expenditure</code></td><td>12</td><td>0,62 %</td></tr>
+      <tr><td><code>school</code></td><td>12</td><td>0,62 %</td></tr>
+      <tr><td><code>hepatitisB</code></td><td>10</td><td>0,52 %</td></tr>
+      <tr><td><code>bmi</code></td><td>8</td><td>0,41 %</td></tr>
+      <tr><td><code>adult_mortality</code></td><td>4</td><td>0,21 %</td></tr>
+    </tbody>
+  </table>
+  <p>Nenhuma coluna ultrapassou 10 % de missings. A variável-alvo não continha nulos após o munging inicial.</p>
+
+  <h3>Q3 — Países desenvolvidos vs. em desenvolvimento</h3>
+  <p>
+    Teste de Mann-Whitney aplicado entre os dois grupos:
+  </p>
+  <ul>
+    <li>Mediana <span class="badge badge-green">Developed</span>: <strong>81,88 anos</strong></li>
+    <li>Mediana <span class="badge badge-orange">Developing</span>: <strong>72,10 anos</strong></li>
+    <li>p-valor: <code>2,86 × 10⁻¹¹⁴</code> → diferença <strong>altamente significativa</strong></li>
+  </ul>
+  <div class="note">
+    Nascer em um país desenvolvido confere, em mediana, quase <strong>10 anos a mais</strong> de vida.
+  </div>
+
+  <h3>Q4 — Variáveis com alta assimetria (skewness)</h3>
+  <table>
+    <thead>
+      <tr><th>Variável</th><th>Skewness original</th><th>Skewness após log</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>gdp</code></td><td>26,37</td><td>−0,65</td></tr>
+      <tr><td><code>measles</code></td><td>9,19</td><td>0,93</td></tr>
+      <tr><td><code>population</code></td><td>7,10</td><td>−0,85</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Todas foram tratadas via <strong>transformação logarítmica</strong>
+    (<code>np.log1p</code>), reduzindo os coeficientes para próximo de zero.
+  </p>
+
+  <!-- DATA MUNGING -->
+  <h2>5. Data Munging</h2>
+  <ul>
+    <li><strong>Vírgulas decimais:</strong> substituídas por pontos e convertidas para <code>float</code>.</li>
+    <li><strong>Espaços extras:</strong> eliminados com <code>.str.strip()</code>.</li>
+    <li><strong>Status:</strong> unificado para <em>Developed</em> / <em>Developing</em> via <code>.str.capitalize()</code>.</li>
+    <li><strong>Mortalidade negativa (−5):</strong> substituída por <code>NaN</code>.</li>
+    <li>
+      <strong>Imputação em 3 camadas:</strong>
+      <ol>
+        <li>Mediana do próprio país</li>
+        <li>Mediana do grupo (<em>status</em>)</li>
+        <li>Mediana global</li>
+      </ol>
+    </li>
+    <li>Resultado: <strong>0 valores ausentes</strong> no DataFrame final.</li>
+  </ul>
+  <p>Entregável da etapa: <code>df_clean.csv</code></p>
+
+  <!-- FEATURE ENGINEERING -->
+  <h2>6. Engenharia de Recursos</h2>
+  <table>
+    <thead>
+      <tr><th>Nova coluna</th><th>Origem</th><th>Motivação</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>log_gdp</code></td>
+        <td><code>np.log1p(gdp)</code></td>
+        <td>Corrige assimetria extrema do PIB</td>
+      </tr>
+      <tr>
+        <td><code>log_population</code></td>
+        <td><code>np.log1p(population)</code></td>
+        <td>Corrige assimetria da população</td>
+      </tr>
+      <tr>
+        <td><code>log_measles</code></td>
+        <td><code>np.log1p(measles)</code></td>
+        <td>Corrige assimetria dos casos de sarampo</td>
+      </tr>
+      <tr>
+        <td><code>vaccine_coverage_avg</code></td>
+        <td>Média de <code>hepatitisB</code>, <code>polio</code>, <code>diphtheria</code></td>
+        <td>Índice único de imunização; reduz multicolinearidade</td>
+      </tr>
+      <tr>
+        <td><code>disease_burden</code></td>
+        <td><code>hiv + measles</code></td>
+        <td>Pressão combinada de doenças transmissíveis</td>
+      </tr>
+      <tr>
+        <td><code>thinness_avg</code></td>
+        <td>Média de <code>thinness_till19</code>, <code>thinness_till9</code></td>
+        <td>Consolida variáveis altamente correlacionadas</td>
+      </tr>
+      <tr>
+        <td><code>status_enc</code></td>
+        <td><code>Developed = 1, Developing = 0</code></td>
+        <td>Encoding binário da variável categórica</td>
+      </tr>
+      <tr>
+        <td><code>year_norm</code></td>
+        <td><code>(year − 2016) / 9</code></td>
+        <td>Normaliza o tempo em escala [0, 1]</td>
+      </tr>
+      <tr>
+        <td><code>mortality_le_ratio</code></td>
+        <td><code>adult_mortality / life_expectancy</code></td>
+        <td>Mortalidade relativa à longevidade atual (feature bônus)</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    Ao final, todas as colunas preditoras numéricas foram padronizadas com
+    <code>StandardScaler</code> (média = 0, desvio padrão = 1), resultando em
+    <strong>33 colunas</strong> prontas para modelagem.
+  </p>
+
+  <!-- ESTRUTURA DE ARQUIVOS -->
+  <h2>7. Estrutura de Arquivos</h2>
+  <pre><code>aula18/
+├── exercicio_aula18.ipynb          # notebook principal
+├── expectativa_vida_2016_2025.csv  # dataset de entrada
+├── df_clean.csv                    # dataset limpo (saída da Etapa 2)
+├── requirements.txt                # dependências Python
+├── .gitignore
+└── documentacao.html               # este arquivo</code></pre>
+
+  <!-- COMO EXECUTAR -->
+  <h2>8. Como Executar</h2>
+  <ol>
+    <li>Instale as dependências: <code>pip install -r requirements.txt</code></li>
+    <li>Abra o notebook: <code>jupyter notebook exercicio_aula18.ipynb</code></li>
+    <li>Execute todas as células (<em>Run All</em>) de cima para baixo.</li>
+    <li>O arquivo <code>df_clean.csv</code> será gerado automaticamente.</li>
+  </ol>
+
+</main>
+
+<footer>Documentação gerada automaticamente a partir de <strong>exercicio_aula18.ipynb</strong></footer>
+
+</body>
+</html>
